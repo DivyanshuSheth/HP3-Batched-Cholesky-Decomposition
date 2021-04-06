@@ -176,9 +176,9 @@ __global__ void right_looking_launch_kernel(float* read_data,int N, int M , int 
                 syrk_tile(&row_data[tx*shared_size_single_matrix],rA1,k,j,N);
                 store_full(&row_data[tile_data_index],read_data,k,j,N, M, shared_size_single_matrix_tile_data);
             }
-            // load_full(read_data,&row_data[tile_data_index],k,j,N, M, shared_size_single_matrix_tile_data);
-            // syrk_tile(&row_data[tx*shared_size_single_matrix],&row_data[tile_data_index + tx*shared_size_single_matrix_tile_data],k,j,N);
-            // store_full(&row_data[tile_data_index],read_data,k,j,N, M, shared_size_single_matrix_tile_data);
+            load_full(read_data,&row_data[tile_data_index],k,j,N, M, shared_size_single_matrix_tile_data);
+            syrk_tile(&row_data[tx*shared_size_single_matrix],&row_data[tile_data_index + tx*shared_size_single_matrix_tile_data],k,j,N);
+            store_full(&row_data[tile_data_index],read_data,k,j,N, M, shared_size_single_matrix_tile_data);
         }
         store_full_row(row_data,read_data,i,N, M, shared_size_single_matrix);
     }
