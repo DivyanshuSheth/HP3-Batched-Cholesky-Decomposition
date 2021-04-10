@@ -23,7 +23,7 @@ __device__ void store_full_col(float* read_data,float* write_data,int j,int N, i
     for(int i=0;i<N/TILE_SIZE;i++)
     {
         global_y = i*blockDim.z + threadIdx.z;
-        write_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x] = read_data[threadIdx.y + (TILE_SIZE+1)*global_y + threadIdx.x*shared_size_single_matrix];
+        write_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x] = read_data[threadIdx.y + TILE_SIZE*global_y + threadIdx.x*shared_size_single_matrix];
     }
     __syncthreads();
 
@@ -45,7 +45,7 @@ __device__ void store_full_col(float* read_data,float* write_data,int j,int N, i
     //     // int global_id = ((g_threadX / chunk_size) *chunk_size)*N*N + x *chunk_size + (g_threadX % chunk_size);	
        	
     //     // write_data[global_id] = (tx < TILE_SIZE && ty < TILE_SIZE) ? read_data[ty * TILE_SIZE + tx + shared_size_single_matrix*threadIdx.x] : 0;
-    //     write_data[row*N*M + column*M + threadIdx.x] = read_data[threadIdx.y + (TILE_SIZE+1)*row + threadIdx.x*shared_size_single_matrix];
+    //     write_data[row*N*M + column*M + threadIdx.x] = read_data[threadIdx.y + TILE_SIZE*row + threadIdx.x*shared_size_single_matrix];
     // }
     // __syncthreads();
 }
@@ -56,8 +56,8 @@ __device__ void load_full_col(float* read_data,float* write_data,int j,int N, in
     for(int i=0;i<N/TILE_SIZE;i++)
     {
         global_y = i*blockDim.z + threadIdx.z;
-        write_data[threadIdx.y + (TILE_SIZE+1)*global_y + threadIdx.x*shared_size_single_matrix] = read_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x];
-        // printf("%d, %d\n", threadIdx.y + (TILE_SIZE+1)*global_y + threadIdx.x*shared_size_single_matrix, global_y*N*M + global_x*M + threadIdx.x);
+        write_data[threadIdx.y + TILE_SIZE*global_y + threadIdx.x*shared_size_single_matrix] = read_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x];
+        // printf("%d, %d\n", threadIdx.y + TILE_SIZE*global_y + threadIdx.x*shared_size_single_matrix, global_y*N*M + global_x*M + threadIdx.x);
     }
     __syncthreads();
 }
@@ -65,23 +65,23 @@ __device__ void store_full(float* read_data,float* write_data,int i,int j,int N,
 {
     int global_y = j*blockDim.z + threadIdx.z;
     int global_x = i*blockDim.y + threadIdx.y;
-    write_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x] = read_data[threadIdx.y + (TILE_SIZE+1)*threadIdx.z + threadIdx.x*shared_size_single_matrix];
+    write_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x] = read_data[threadIdx.y + TILE_SIZE*threadIdx.z + threadIdx.x*shared_size_single_matrix];
     __syncthreads();
 }
 __device__ void load_full(float* read_data,float* write_data,int i,int j,int N, int M, int shared_size_single_matrix)
 {
     int global_y = j*blockDim.z + threadIdx.z;
     int global_x = i*blockDim.y + threadIdx.y;
-    write_data[threadIdx.y + (TILE_SIZE+1)*threadIdx.z + threadIdx.x*shared_size_single_matrix] = read_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x];
+    write_data[threadIdx.y + TILE_SIZE*threadIdx.z + threadIdx.x*shared_size_single_matrix] = read_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x];
     __syncthreads();
 }
 __device__ void store_lower(float* read_data,float* write_data,int i,int j,int N, int M, int shared_size_single_matrix)
 {
     int global_y = j*blockDim.z + threadIdx.z;
     int global_x = i*blockDim.y + threadIdx.y;
-    // printf("%f is at %d\n", read_data[threadIdx.y + (TILE_SIZE+1)*threadIdx.z + threadIdx.x*shared_size_single_matrix], threadIdx.y + (TILE_SIZE+1)*threadIdx.z + threadIdx.x*shared_size_single_matrix);
+    // printf("%f is at %d\n", read_data[threadIdx.y + TILE_SIZE*threadIdx.z + threadIdx.x*shared_size_single_matrix], threadIdx.y + TILE_SIZE*threadIdx.z + threadIdx.x*shared_size_single_matrix);
     if(threadIdx.z >= threadIdx.y)
-        write_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x] = read_data[threadIdx.y + (TILE_SIZE+1)*threadIdx.z + threadIdx.x*shared_size_single_matrix];
+        write_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x] = read_data[threadIdx.y + TILE_SIZE*threadIdx.z + threadIdx.x*shared_size_single_matrix];
     else
         write_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x] = 0.0;
     __syncthreads();
@@ -91,9 +91,9 @@ __device__ void load_lower(float* read_data,float* write_data,int i,int j,int N,
     int global_y = j*blockDim.z + threadIdx.z;
     int global_x = i*blockDim.y + threadIdx.y;
     if(threadIdx.z >= threadIdx.y)
-        write_data[threadIdx.y + (TILE_SIZE+1)*threadIdx.z + threadIdx.x*shared_size_single_matrix] = read_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x];
+        write_data[threadIdx.y + TILE_SIZE*threadIdx.z + threadIdx.x*shared_size_single_matrix] = read_data[global_y*N*M + global_x*M +  blockIdx.x * blockDim.x + threadIdx.x];
     else
-        write_data[threadIdx.y + (TILE_SIZE+1)*threadIdx.z + threadIdx.x*shared_size_single_matrix] = 0.0;
+        write_data[threadIdx.y + TILE_SIZE*threadIdx.z + threadIdx.x*shared_size_single_matrix] = 0.0;
     __syncthreads();
 }
 __device__ void potrf_tile(float* t_A)
@@ -105,18 +105,18 @@ __device__ void potrf_tile(float* t_A)
     {
         if(t_x==t_y && t_x==k)
         {
-            t_A[k*(TILE_SIZE+1) + k] = sqrtf(t_A[k*(TILE_SIZE+1) + k]);
-            temp2 = t_A[k*(TILE_SIZE+1) + k];
+            t_A[k*TILE_SIZE + k] = sqrtf(t_A[k*TILE_SIZE + k]);
+            temp2 = t_A[k*TILE_SIZE + k];
         }
         __syncthreads();
         if(t_x<t_y && t_x == k)
         {
-            t_A[t_y*(TILE_SIZE+1) + k]/= temp2;
+            t_A[t_y*TILE_SIZE + k]/= temp2;
         }
         __syncthreads();
         if(k<t_y && k<t_x && t_x<=t_y)
         {
-            t_A[t_y*(TILE_SIZE+1) + t_x]-= t_A[t_x*(TILE_SIZE+1) + k]*t_A[t_y*(TILE_SIZE+1) + k];
+            t_A[t_y*TILE_SIZE + t_x]-= t_A[t_x*TILE_SIZE + k]*t_A[t_y*TILE_SIZE + k];
         }
         __syncthreads();
     }
@@ -131,12 +131,12 @@ __device__ void trsm_tile(float *row_data,int i,int j,int N)
     {
 	if(t_x==s)
         {
-	    row_data[global_y*(TILE_SIZE+1) + t_x]/= row_data[global_x*(TILE_SIZE+1) + t_x];
+	    row_data[global_y*TILE_SIZE + t_x]/= row_data[global_x*TILE_SIZE + t_x];
 	}
 	__syncthreads();
 	if(t_x > s)
         {
-	    row_data[global_y*(TILE_SIZE+1) + t_x]-= row_data[global_x*(TILE_SIZE+1) +  s]*row_data[global_y*(TILE_SIZE+1) + s];
+	    row_data[global_y*TILE_SIZE + t_x]-= row_data[global_x*TILE_SIZE +  s]*row_data[global_y*TILE_SIZE + s];
 	}
 	__syncthreads();
     }
@@ -150,9 +150,9 @@ __device__ void syrk_tile(float* row_data,float* edit_data,int i,int j,int N)
     float valueToSubtract = 0.0;
     for(int r=0;r<TILE_SIZE;r++)
     {
-        valueToSubtract+= row_data[r + global_y*(TILE_SIZE+1)]*row_data[r + global_x*(TILE_SIZE+1)];
+        valueToSubtract+= row_data[r + global_y*TILE_SIZE]*row_data[r + global_x*TILE_SIZE];
     }
-    edit_data[t_y*(TILE_SIZE+1) + t_x]-= valueToSubtract;
+    edit_data[t_y*TILE_SIZE + t_x]-= valueToSubtract;
     __syncthreads();
 }
 
@@ -184,9 +184,9 @@ __global__ void right_looking_launch_kernel(float* read_data,int N, int M , int 
     float *rA1 = NULL;
 
     extern __shared__ float row_data[];
-    // __shared__ float tile_data[TILE_SIZE*(TILE_SIZE+1)];                // Using TILE_SIZE+1 to avoid Band-conflict in Shared Memory
+    // __shared__ float tile_data[TILE_SIZE*TILE_SIZE];                // Using TILE_SIZE to avoid Band-conflict in Shared Memory
     int tile_data_index = num_of_matrices_per_block* shared_size_single_matrix;
-    // __shared__ float* tile_data = &row_data[M * (N*(TILE_SIZE+1) + TILE_SIZE*(TILE_SIZE+1) + 1)];
+    // __shared__ float* tile_data = &row_data[M * (N*TILE_SIZE + TILE_SIZE*TILE_SIZE + 1)];
     int shared_size_single_matrix_tile_data = TILE_SIZE * (TILE_SIZE + 1);
 
 
@@ -342,7 +342,7 @@ int main()
 
     // dim3 grid(1,1,1);
     // dim3 block(TILE_SIZE,TILE_SIZE,1);
-    // size_t shared_size = (N*(TILE_SIZE+1) + TILE_SIZE*(TILE_SIZE+1) + 1)*sizeof(float);
+    // size_t shared_size = (N*TILE_SIZE + TILE_SIZE*TILE_SIZE + 1)*sizeof(float);
     // right_looking_launch_kernel<<<grid,block,shared_size>>>(read_data,N);
     // err = cudaMemcpy(M,read_data,size,cudaMemcpyDeviceToHost);
     // if(err != cudaSuccess)
@@ -362,9 +362,9 @@ int main()
     // int INPUT_SIZE = dim_of_matrix;
     // int no_of_tiles = (INPUT_SIZE / TILE_SIZE) + (INPUT_SIZE % TILE_SIZE != 0); // ceil of (INPUT_SIZE / TILE_SIZE)
     int N = dim_of_matrix;
-    size_t shared_size = num_of_matrices_per_block * (N*(TILE_SIZE+1) + TILE_SIZE*(TILE_SIZE+1) + 1)*sizeof(float) + num_of_matrices_per_block * TILE_SIZE*(TILE_SIZE+1) * sizeof(float);
+    size_t shared_size = num_of_matrices_per_block * (N*TILE_SIZE + TILE_SIZE*TILE_SIZE + 1)*sizeof(float) + num_of_matrices_per_block * TILE_SIZE*TILE_SIZE * sizeof(float);
     
-    right_looking_launch_kernel<<<grid,block,shared_size>>>(d_A, dim_of_matrix, num_of_matrices, num_of_matrices_per_block ,(N*(TILE_SIZE+1) + TILE_SIZE*(TILE_SIZE+1) + 1));
+    right_looking_launch_kernel<<<grid,block,shared_size>>>(d_A, dim_of_matrix, num_of_matrices, num_of_matrices_per_block ,(N*TILE_SIZE + TILE_SIZE*TILE_SIZE + 1));
     //left_looking_kernel<<<grid, block, num_of_matrices_per_block * 1 * TILE_SIZE * TILE_SIZE * sizeof(float)>>>(d_A, dim_of_matrix, num_of_matrices ,1 * TILE_SIZE * TILE_SIZE);
 
     cudaError_t cudaerr = cudaDeviceSynchronize();
